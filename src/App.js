@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-
 // 工具函數：產生日期+小時陣列
 function getDateHourArray(startDate, endDate, hoursPerDay = 24) {
   const arr = [];
@@ -19,7 +18,6 @@ function getDateHourArray(startDate, endDate, hoursPerDay = 24) {
   }
   return arr;
 }
-
 // 預設任務名稱列表
 const defaultTaskNames = [
   "Grid IPRO",
@@ -64,7 +62,6 @@ const defaultTaskNames = [
   "Requal",
   "Software upgrade",
 ];
-
 // 調色盤
 const palette = [
   "#FFB347",
@@ -76,13 +73,11 @@ const palette = [
   "#FF6961",
   "#CB99C9",
 ];
-
 function App() {
   // 獲取當前日期
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-
   // 狀態
   const [startDate, setStartDate] = useState(today.toISOString().slice(0, 10));
   const [endDate, setEndDate] = useState(tomorrow.toISOString().slice(0, 10));
@@ -93,16 +88,14 @@ function App() {
   const [newTaskHours, setNewTaskHours] = useState(8);
   const [selectedColor, setSelectedColor] = useState(palette[0]);
   const [selectedTask, setSelectedTask] = useState(null);
-
+  const [shiftHours, setShiftHours] = useState(0);
   const fileInputRef = useRef();
-
   // 產生橫軸
   const allDateHours = getDateHourArray(
     new Date(startDate),
     new Date(endDate),
     hoursPerDay
   );
-
   // 新增任務
   function addTask() {
     const name = newTaskName === "" ? customTaskName : newTaskName;
@@ -118,7 +111,6 @@ function App() {
     ]);
     setCustomTaskName(""); // 新增後清空自訂名稱
   }
-
   // 拖曳 bar
   function onBarDrag(idx, delta) {
     setTasks((tasks) =>
@@ -135,13 +127,11 @@ function App() {
       )
     );
   }
-
   // 拉伸 bar
   function onBarResize(idx, delta, edge) {
     setTasks((tasks) =>
       tasks.map((t, i) => {
         if (i !== idx) return t;
-
         if (edge === "left") {
           // 左邊拉伸：固定右邊，改變起始點和長度
           const newStart = Math.max(0, t.start + delta);
@@ -157,14 +147,12 @@ function App() {
       })
     );
   }
-
   // 選擇任務
   function selectTask(idx) {
     setSelectedTask(idx);
     // 同時更新選中的顏色
     setSelectedColor(tasks[idx].color);
   }
-
   // 選擇顏色
   function selectColor(color) {
     setSelectedColor(color);
@@ -175,7 +163,6 @@ function App() {
       );
     }
   }
-
   // 刪除任務
   function deleteTask() {
     if (selectedTask !== null) {
@@ -183,7 +170,6 @@ function App() {
       setSelectedTask(null);
     }
   }
-
   // 拖曳任務順序
   function onTaskDrag(fromIdx, toIdx) {
     if (fromIdx === toIdx) return;
@@ -194,12 +180,10 @@ function App() {
       return newTasks;
     });
   }
-
   // 匯出 Excel
   async function exportExcel() {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Gantt");
-
     // 標題列
     const headerRow1 = ["Action"];
     let lastDate = "";
@@ -212,21 +196,18 @@ function App() {
       }
     });
     sheet.addRow(headerRow1);
-
     // 小時列
     const headerRow2 = [" "];
     allDateHours.forEach((dh, i) => {
       headerRow2.push(i % hoursPerDay === 0 ? hoursPerDay : null);
     });
     sheet.addRow(headerRow2);
-
     // 合併日期儲存格
     let col = 2;
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
       sheet.mergeCells(1, col, 1, col + hoursPerDay - 1);
       col += hoursPerDay;
     }
-
     // 資料列
     tasks.forEach((task) => {
       const row = [task.name];
@@ -246,17 +227,14 @@ function App() {
         }
       }
     });
-
     // 欄寬
     sheet.columns.forEach((col, i) => {
       col.width = i === 0 ? 30 : 8;
     });
-
     // 下載
     const buf = await workbook.xlsx.writeBuffer();
     saveAs(new Blob([buf]), "gantt.xlsx");
   }
-
   // 匯入 Excel
   async function importExcel(e) {
     const file = e.target.files[0];
@@ -290,7 +268,6 @@ function App() {
     setTasks(newTasks);
     setSelectedTask(null);
   }
-
   // 鍵盤刪除
   React.useEffect(() => {
     function onKeyDown(e) {
@@ -299,17 +276,14 @@ function App() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   });
-
   // 拖曳 bar & resize
   function handleBarMouseDown(idx, e, edge) {
     e.preventDefault();
     let startX = e.clientX;
     let lastDelta = 0;
-
     function onMove(ev) {
       const moveX = ev.clientX - startX;
       const delta = Math.floor(moveX / 40);
-
       if (delta !== lastDelta) {
         if (edge) {
           onBarResize(idx, delta - lastDelta, edge);
@@ -319,16 +293,13 @@ function App() {
         lastDelta = delta;
       }
     }
-
     function onUp() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     }
-
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   }
-
   // 拖曳任務順序
   function handleTaskDragStart(idx, e) {
     e.dataTransfer.setData("taskIdx", idx);
@@ -337,14 +308,24 @@ function App() {
     const fromIdx = Number(e.dataTransfer.getData("taskIdx"));
     onTaskDrag(fromIdx, idx);
   }
-
+  // 平移所有任務
+  function shiftAllTasks(delta) {
+    setTasks(tasks =>
+      tasks.map(t => {
+        let newStart = t.start + delta;
+        // 限制不能小於 0，也不能超過橫軸最大格
+        newStart = Math.max(0, Math.min(allDateHours.length - t.duration, newStart));
+        return { ...t, start: newStart };
+      })
+    );
+  }
   // UI
   return (
     <div style={{ padding: 24, fontFamily: "sans-serif" }}>
       <h2>IMS gantt chart generator</h2>
       <p style={{ fontSize: 14, color: "#666", margin: "4px 0 16px" }}>
-    Creator: Nick Lin
-  </p>
+        Creator: Nick Lin
+      </p>
       <div style={{ marginBottom: 12 }}>
         <label>
           Project Start:
@@ -407,10 +388,12 @@ function App() {
       <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
         <select
           value={newTaskName}
-          onChange={e => setNewTaskName(e.target.value)}
+          onChange={(e) => setNewTaskName(e.target.value)}
         >
-          {defaultTaskNames.map(n => (
-            <option key={n} value={n}>{n}</option>
+          {defaultTaskNames.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
           ))}
           <option value="">Custom...</option>
         </select>
@@ -418,7 +401,7 @@ function App() {
           <input
             placeholder="Task name"
             value={customTaskName}
-            onChange={e => setCustomTaskName(e.target.value)}
+            onChange={(e) => setCustomTaskName(e.target.value)}
             style={{ marginLeft: 8 }}
           />
         )}
@@ -427,10 +410,22 @@ function App() {
           min={1}
           max={allDateHours.length}
           value={newTaskHours}
-          onChange={e => setNewTaskHours(Number(e.target.value))}
+          onChange={(e) => setNewTaskHours(Number(e.target.value))}
           style={{ width: 40, margin: "0 8px" }}
         />
         <button onClick={addTask}>Add Task</button>
+      </div>
+      <div style={{ margin: "12px 0" }}>
+        <button onClick={() => shiftAllTasks(-1)}>←</button>
+        <span style={{ margin: "0 8px" }}>Shift All Tasks</span>
+        <button onClick={() => shiftAllTasks(1)}>→</button>
+        <input
+          type="number"
+          value={shiftHours}
+          onChange={e => setShiftHours(Number(e.target.value))}
+          style={{ width: 40, margin: "0 8px" }}
+        />
+        <button onClick={() => shiftAllTasks(shiftHours)}>Shift by N hours</button>
       </div>
       {/* Gantt Chart Table */}
       <div
@@ -620,5 +615,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
