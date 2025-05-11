@@ -226,7 +226,6 @@ function App() {
     const sheet = workbook.addWorksheet("Gantt");
     // 標題列（日期）
     const headerRow1 = ["Action"];
-    let lastDate = "";
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
       headerRow1.push(allDateHours[d].date);
       for (let h = 1; h < hoursPerDay; h++) {
@@ -260,7 +259,7 @@ function App() {
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FFD9D9D9' } // 第一列：較深灰
+        fgColor: { argb: 'FFD9D9D9' }
       };
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
@@ -268,7 +267,7 @@ function App() {
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FFF2F2F2' } // 第二列：較淺灰
+        fgColor: { argb: 'FFF2F2F2' }
       };
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });

@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "gantt-chart",
   "version": "0.1.0",
   "private": true,
@@ -10,30 +9,10 @@
     "react-dom": "18.2.0",
     "react-calendar-timeline": "1.0.0",
     "react-scripts": "5.0.1"
-=======
-  "name": "react",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "main": "src/index.js",
-  "dependencies": {
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "moment": "2.29.4",
-    "react-calendar-timeline": "0.27.0",
-    "prop-types": "15.8.1",
-    "interactjs": "1.10.27",
-    "file-saver": "2.0.5",
-    "xlsx": "0.18.5",
-    "react-rnd": "10.5.2",
-    "react-beautiful-dnd": "13.1.1",
-    "exceljs": "4.4.0"
->>>>>>> 9b77a01e5e89001776c44b40da27fe76796faf62
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-<<<<<<< HEAD
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
@@ -58,16 +37,4 @@
     ]
   },
   "homepage": "https://nicklin9989.github.io/gantt_chart_gen"
-} 
-=======
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
-  },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ]
 }
->>>>>>> 9b77a01e5e89001776c44b40da27fe76796faf62
