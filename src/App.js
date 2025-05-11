@@ -338,6 +338,9 @@ function App() {
   return (
     <div style={{ padding: 24, fontFamily: "sans-serif" }}>
       <h2>IMS gantt chart generator</h2>
+      <p style={{ fontSize: 14, color: "#666", margin: "4px 0 16px" }}>
+    Creator: Nick Lin
+  </p>
       <div style={{ marginBottom: 12 }}>
         <label>
           Project Start:
