@@ -224,30 +224,54 @@ function App() {
   async function exportExcel() {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Gantt");
-    // 標題列
+    // 標題列（日期）
     const headerRow1 = ["Action"];
     let lastDate = "";
-    allDateHours.forEach((dh, i) => {
-      if (dh.date !== lastDate) {
-        headerRow1.push(`${dh.date}`);
-        lastDate = dh.date;
-      } else {
+    for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
+      headerRow1.push(allDateHours[d].date);
+      for (let h = 1; h < hoursPerDay; h++) {
         headerRow1.push(null);
       }
-    });
+    }
     sheet.addRow(headerRow1);
+    // 合併第一列（日期）儲存格
+    let col1 = 2;
+    for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
+      sheet.mergeCells(1, col1, 1, col1 + hoursPerDay - 1);
+      col1 += hoursPerDay;
+    }
     // 小時列
     const headerRow2 = [" "];
-    allDateHours.forEach((dh, i) => {
-      headerRow2.push(i % hoursPerDay === 0 ? hoursPerDay : null);
-    });
-    sheet.addRow(headerRow2);
-    // 合併日期儲存格
-    let col = 2;
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
-      sheet.mergeCells(1, col, 1, col + hoursPerDay - 1);
-      col += hoursPerDay;
+      headerRow2.push(hoursPerDay);
+      for (let h = 1; h < hoursPerDay; h++) {
+        headerRow2.push(null);
+      }
     }
+    sheet.addRow(headerRow2);
+    // 合併第二列（小時）儲存格
+    let col2 = 2;
+    for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
+      sheet.mergeCells(2, col2, 2, col2 + hoursPerDay - 1);
+      col2 += hoursPerDay;
+    }
+    // 設定第一、二列底色與置中
+    sheet.getRow(1).eachCell(cell => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD9D9D9' } // 第一列：較深灰
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
+    sheet.getRow(2).eachCell(cell => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF2F2F2' } // 第二列：較淺灰
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+    });
     // 資料列
     tasks.forEach((task) => {
       const row = [task.name];
@@ -271,6 +295,38 @@ function App() {
     sheet.columns.forEach((col, i) => {
       col.width = i === 0 ? 30 : 8;
     });
+    // 只加外框
+    sheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+    });
+    // 加粗最外框（修正版）
+    const firstRow = 1;
+    const lastRow = sheet.rowCount;
+    const firstCol = 1;
+    const lastCol = sheet.columnCount;
+    for (let r = firstRow; r <= lastRow; r++) {
+      for (let c = firstCol; c <= lastCol; c++) {
+        const cell = sheet.getRow(r).getCell(c);
+        let border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        if (r === firstRow) border.top = { style: 'thick' };
+        if (r === lastRow) border.bottom = { style: 'thick' };
+        if (c === firstCol) border.left = { style: 'thick' };
+        if (c === lastCol) border.right = { style: 'thick' };
+        cell.border = border;
+      }
+    }
     // 下載
     const buf = await workbook.xlsx.writeBuffer();
     saveAs(new Blob([buf]), "gantt.xlsx");
