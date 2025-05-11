@@ -224,8 +224,8 @@ function App() {
   async function exportExcel() {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Gantt");
-    // 標題列（日期）
-    const headerRow1 = ["Action"];
+    // 標題列
+    const headerRow1 = ["Action", "Hours"];
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
       headerRow1.push(allDateHours[d].date);
       for (let h = 1; h < hoursPerDay; h++) {
@@ -233,14 +233,14 @@ function App() {
       }
     }
     sheet.addRow(headerRow1);
-    // 合併第一列（日期）儲存格
-    let col1 = 2;
+    // 合併日期儲存格
+    let col1 = 3;
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
       sheet.mergeCells(1, col1, 1, col1 + hoursPerDay - 1);
       col1 += hoursPerDay;
     }
     // 小時列
-    const headerRow2 = [" "];
+    const headerRow2 = [" ", null];
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
       headerRow2.push(hoursPerDay);
       for (let h = 1; h < hoursPerDay; h++) {
@@ -248,8 +248,8 @@ function App() {
       }
     }
     sheet.addRow(headerRow2);
-    // 合併第二列（小時）儲存格
-    let col2 = 2;
+    // 合併小時儲存格
+    let col2 = 3;
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
       sheet.mergeCells(2, col2, 2, col2 + hoursPerDay - 1);
       col2 += hoursPerDay;
@@ -273,14 +273,14 @@ function App() {
     });
     // 資料列
     tasks.forEach((task) => {
-      const row = [task.name];
+      const row = [task.name, task.duration];
       for (let i = 0; i < allDateHours.length; i++) {
         row.push(i >= task.start && i < task.start + task.duration ? " " : "");
       }
       const r = sheet.addRow(row);
       // 色塊樣式
       for (let i = 0; i < allDateHours.length; i++) {
-        const cell = r.getCell(i + 2);
+        const cell = r.getCell(i + 3);
         if (i >= task.start && i < task.start + task.duration) {
           cell.fill = {
             type: "pattern",
@@ -292,7 +292,7 @@ function App() {
     });
     // 欄寬
     sheet.columns.forEach((col, i) => {
-      col.width = i === 0 ? 30 : 8;
+      col.width = i === 0 ? 30 : (i === 1 ? 8 : 8);
     });
     // 只加外框
     sheet.eachRow((row, rowNumber) => {
@@ -578,6 +578,16 @@ function App() {
               >
                 Action
               </th>
+              <th
+                style={{
+                  width: 60,
+                  background: "#eee",
+                  textAlign: "center",
+                  border: "1px solid #ccc",
+                }}
+              >
+                Hours
+              </th>
               {allDateHours.map((dh, i) =>
                 i % hoursPerDay === 0 ? (
                   <th
@@ -603,6 +613,13 @@ function App() {
                   position: "sticky",
                   left: 0,
                   zIndex: 1,
+                }}
+              />
+              <th
+                style={{
+                  background: "#f0f0f0",
+                  border: "1px solid #ccc",
+                  textAlign: "center",
                 }}
               />
               {allDateHours.map((dh, i) =>
@@ -652,6 +669,15 @@ function App() {
                   }}
                 >
                   {task.name}
+                </td>
+                <td
+                  style={{
+                    border: "1px solid #ccc",
+                    width: 60,
+                    textAlign: "center",
+                  }}
+                >
+                  {task.duration}
                 </td>
                 {allDateHours.map((dh, i) => {
                   // bar
