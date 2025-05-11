@@ -89,6 +89,7 @@ function App() {
   const [hoursPerDay, setHoursPerDay] = useState(24);
   const [tasks, setTasks] = useState([]); // 空陣列，沒有預設任務
   const [newTaskName, setNewTaskName] = useState(defaultTaskNames[0]);
+  const [customTaskName, setCustomTaskName] = useState("");
   const [newTaskHours, setNewTaskHours] = useState(8);
   const [selectedColor, setSelectedColor] = useState(palette[0]);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -104,15 +105,18 @@ function App() {
 
   // 新增任務
   function addTask() {
+    const name = newTaskName === "" ? customTaskName : newTaskName;
+    if (!name) return;
     setTasks([
       ...tasks,
       {
-        name: newTaskName,
+        name,
         start: 0,
         duration: newTaskHours,
         color: selectedColor,
       },
     ]);
+    setCustomTaskName(""); // 新增後清空自訂名稱
   }
 
   // 拖曳 bar
@@ -403,20 +407,19 @@ function App() {
       <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
         <select
           value={newTaskName}
-          onChange={(e) => setNewTaskName(e.target.value)}
+          onChange={e => setNewTaskName(e.target.value)}
         >
-          {defaultTaskNames.map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
+          {defaultTaskNames.map(n => (
+            <option key={n} value={n}>{n}</option>
           ))}
           <option value="">Custom...</option>
         </select>
         {newTaskName === "" && (
           <input
             placeholder="Task name"
-            value={newTaskName}
-            onChange={(e) => setNewTaskName(e.target.value)}
+            value={customTaskName}
+            onChange={e => setCustomTaskName(e.target.value)}
+            style={{ marginLeft: 8 }}
           />
         )}
         <input
@@ -424,7 +427,7 @@ function App() {
           min={1}
           max={allDateHours.length}
           value={newTaskHours}
-          onChange={(e) => setNewTaskHours(Number(e.target.value))}
+          onChange={e => setNewTaskHours(Number(e.target.value))}
           style={{ width: 40, margin: "0 8px" }}
         />
         <button onClick={addTask}>Add Task</button>
