@@ -62,6 +62,45 @@ const defaultTaskNames = [
   "Requal",
   "Software upgrade",
 ];
+// 預設模板
+const defaultTemplates = [
+  {
+    name: "e-source replacement",
+    tasks: [
+      {
+        name: "Grid IPRO, IMAP, Ref. scans",
+        start: 0,
+        duration: 2,
+        color: "#FFB347",
+      },
+      {
+        name: "Ramping down from XO2",
+        start: 2,
+        duration: 2,
+        color: "#77DD77",
+      },
+      {
+        name: "Vent the column, diss housing",
+        start: 4,
+        duration: 3,
+        color: "#AEC6CF",
+      },
+      { name: "e-source replacement", start: 7, duration: 3, color: "#CFCFC4" },
+      { name: "Reassmemble housing", start: 10, duration: 2, color: "#CFCFC4" },
+      { name: "gun stabilisation", start: 12, duration: 8, color: "#FF6961" },
+      { name: "Ramp to XO2", start: 20, duration: 3, color: "#B39EB5" },
+      { name: "XO2 alignment", start: 23, duration: 8, color: "#B39EB5" },
+      {
+        name: "Burn in, Exposure alignment",
+        start: 31,
+        duration: 12,
+        color: "#B39EB5",
+      },
+      { name: "Grid IPRO, IMAP", start: 43, duration: 6, color: "#AEC6CF" },
+      { name: "1st Monitor plate", start: 49, duration: 5, color: "#CFCFC4" },
+    ],
+  },
+];
 // 調色盤
 const palette = [
   "#FFB347",
@@ -90,6 +129,7 @@ function App() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [shiftHours, setShiftHours] = useState(0);
   const fileInputRef = useRef();
+  const [selectedTemplate, setSelectedTemplate] = useState("");
   // 產生橫軸
   const allDateHours = getDateHourArray(
     new Date(startDate),
@@ -310,14 +350,25 @@ function App() {
   }
   // 平移所有任務
   function shiftAllTasks(delta) {
-    setTasks(tasks =>
-      tasks.map(t => {
+    setTasks((tasks) =>
+      tasks.map((t) => {
         let newStart = t.start + delta;
         // 限制不能小於 0，也不能超過橫軸最大格
-        newStart = Math.max(0, Math.min(allDateHours.length - t.duration, newStart));
+        newStart = Math.max(
+          0,
+          Math.min(allDateHours.length - t.duration, newStart)
+        );
         return { ...t, start: newStart };
       })
     );
+  }
+  // 應用模板
+  function applyTemplate(templateName) {
+    const template = defaultTemplates.find((t) => t.name === templateName);
+    if (template) {
+      setTasks(template.tasks);
+      setSelectedTemplate(templateName);
+    }
   }
   // UI
   return (
@@ -327,6 +378,21 @@ function App() {
         Creator: Nick Lin
       </p>
       <div style={{ marginBottom: 12 }}>
+        <label>
+          choose template:
+          <select
+            value={selectedTemplate}
+            onChange={(e) => applyTemplate(e.target.value)}
+            style={{ margin: "0 8px" }}
+          >
+            <option value="">-- choose template --</option>
+            {defaultTemplates.map((template) => (
+              <option key={template.name} value={template.name}>
+                {template.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <label>
           Project Start:
           <input
@@ -422,10 +488,12 @@ function App() {
         <input
           type="number"
           value={shiftHours}
-          onChange={e => setShiftHours(Number(e.target.value))}
+          onChange={(e) => setShiftHours(Number(e.target.value))}
           style={{ width: 40, margin: "0 8px" }}
         />
-        <button onClick={() => shiftAllTasks(shiftHours)}>Shift by N hours</button>
+        <button onClick={() => shiftAllTasks(shiftHours)}>
+          Shift by N hours
+        </button>
       </div>
       {/* Gantt Chart Table */}
       <div
