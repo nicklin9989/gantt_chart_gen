@@ -103,14 +103,16 @@ const defaultTemplates = [
 ];
 // 調色盤
 const palette = [
-  "#FFB347",
-  "#77DD77",
-  "#AEC6CF",
-  "#CFCFC4",
-  "#F49AC2",
-  "#B39EB5",
-  "#FF6961",
-  "#CB99C9",
+  "#FFB347", "#77DD77", "#AEC6CF", "#CFCFC4",
+  "#F49AC2", "#B39EB5", "#FF6961", "#CB99C9",
+  "#FFD700", // 金色
+  "#40E0D0", // 青綠
+  "#FFA07A", // 淺橙
+  "#8FBC8F", // 深綠
+  "#6495ED", // 藍
+  "#FF69B4", // 粉紅
+  "#CD5C5C", // 棗紅
+  "#20B2AA"  // 青藍
 ];
 function App() {
   // 獲取當前日期
