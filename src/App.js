@@ -587,15 +587,6 @@ function App() {
         <button onClick={() => shiftAllTasks(-1)}>←</button>
         <span style={{ margin: "0 8px" }}>Shift All Tasks</span>
         <button onClick={() => shiftAllTasks(1)}>→</button>
-        <input
-          type="number"
-          value={shiftHours}
-          onChange={(e) => setShiftHours(Number(e.target.value))}
-          style={{ width: 40, margin: "0 8px" }}
-        />
-        <button onClick={() => shiftAllTasks(shiftHours)}>
-          Shift by N hours
-        </button>
       </div>
       {/* Gantt Chart Table */}
       <div
