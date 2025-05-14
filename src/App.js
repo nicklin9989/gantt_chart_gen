@@ -103,8 +103,14 @@ const defaultTemplates = [
 ];
 // 調色盤
 const palette = [
-  "#FFB347", "#77DD77", "#AEC6CF", "#CFCFC4",
-  "#F49AC2", "#B39EB5", "#FF6961", "#CB99C9",
+  "#FFB347",
+  "#77DD77",
+  "#AEC6CF",
+  "#CFCFC4",
+  "#F49AC2",
+  "#B39EB5",
+  "#FF6961",
+  "#CB99C9",
   "#FFD700", // 金色
   "#40E0D0", // 青綠
   "#FFA07A", // 淺橙
@@ -112,7 +118,7 @@ const palette = [
   "#6495ED", // 藍
   "#FF69B4", // 粉紅
   "#CD5C5C", // 棗紅
-  "#20B2AA"  // 青藍
+  "#20B2AA", // 青藍
 ];
 function App() {
   // 獲取當前日期
@@ -132,6 +138,7 @@ function App() {
   const [shiftHours, setShiftHours] = useState(0);
   const fileInputRef = useRef();
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [showHoursColumn, setShowHoursColumn] = useState(true);
   // 產生橫軸
   const allDateHours = getDateHourArray(
     new Date(startDate),
@@ -226,63 +233,86 @@ function App() {
   async function exportExcel() {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Gantt");
-    // 標題列
-    const headerRow1 = ["Action", "Hours"];
+
+    // Header Row 1: Action, Hours (conditional), Dates
+    const headerRow1Values = ["Action"];
+    if (showHoursColumn) {
+      headerRow1Values.push("Hours");
+    }
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
-      headerRow1.push(allDateHours[d].date);
+      headerRow1Values.push(allDateHours[d].date);
       for (let h = 1; h < hoursPerDay; h++) {
-        headerRow1.push(null);
+        headerRow1Values.push(null);
       }
     }
-    sheet.addRow(headerRow1);
-    // 合併日期儲存格
-    let col1 = 3;
+    const excelHeaderRow1 = sheet.addRow(headerRow1Values);
+
+    // Merge date cells in Header Row 1
+    let dateMergeStartCol = showHoursColumn ? 3 : 2;
     for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
-      sheet.mergeCells(1, col1, 1, col1 + hoursPerDay - 1);
-      col1 += hoursPerDay;
+      sheet.mergeCells(1, dateMergeStartCol, 1, dateMergeStartCol + hoursPerDay - 1);
+      dateMergeStartCol += hoursPerDay;
     }
-    // 小時列
-    const headerRow2 = [" ", null];
-    for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
-      headerRow2.push(hoursPerDay);
-      for (let h = 1; h < hoursPerDay; h++) {
-        headerRow2.push(null);
+
+    // Style Header Row 1
+    excelHeaderRow1.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9D9D9" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+    });
+
+    // Header Row 2: Placeholders and Time Markers (00:00, 12:00)
+    const excelHeaderRow2Values = [];
+    excelHeaderRow2Values.push(null); // Cell under "Action"
+    if (showHoursColumn) {
+      excelHeaderRow2Values.push(null); // Cell under "Hours"
+    }
+    allDateHours.forEach(dh => {
+      const hourInDay = dh.hour;
+      if (hourInDay === 0) {
+        excelHeaderRow2Values.push("00:00");
+      } else if (hourInDay === 12) {
+        excelHeaderRow2Values.push("12:00");
+      } else {
+        excelHeaderRow2Values.push(null);
+      }
+    });
+    const excelHeaderRow2 = sheet.addRow(excelHeaderRow2Values);
+
+    // Style Header Row 2
+    for (let i = 1; i <= sheet.columnCount; i++) {
+      const cell = excelHeaderRow2.getCell(i);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF2F2F2" }, // Light grey background
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+      if (cell.value === "00:00" || cell.value === "12:00") {
+        cell.font = { size: 8, color: { argb: "FF595959" } }; // Smaller, grey font
       }
     }
-    sheet.addRow(headerRow2);
-    // 合併小時儲存格
-    let col2 = 3;
-    for (let d = 0; d < allDateHours.length; d += hoursPerDay) {
-      sheet.mergeCells(2, col2, 2, col2 + hoursPerDay - 1);
-      col2 += hoursPerDay;
-    }
-    // 設定第一、二列底色與置中
-    sheet.getRow(1).eachCell(cell => {
-      cell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFD9D9D9' }
-      };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    });
-    sheet.getRow(2).eachCell(cell => {
-      cell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFF2F2F2' }
-      };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    });
-    // 資料列
+    
+    // Data rows
     tasks.forEach((task) => {
-      const row = [task.name, task.duration];
-      for (let i = 0; i < allDateHours.length; i++) {
-        row.push(i >= task.start && i < task.start + task.duration ? " " : "");
+      const rowData = [task.name];
+      if (showHoursColumn) {
+        rowData.push(task.duration);
       }
-      const r = sheet.addRow(row);
-      // 色塊樣式
       for (let i = 0; i < allDateHours.length; i++) {
-        const cell = r.getCell(i + 3);
+        rowData.push(i >= task.start && i < task.start + task.duration ? " " : "");
+      }
+      const r = sheet.addRow(rowData);
+
+      // Cell coloring for tasks
+      const taskCellsStartCol = showHoursColumn ? 3 : 2;
+      for (let i = 0; i < allDateHours.length; i++) {
+        const cell = r.getCell(i + taskCellsStartCol);
         if (i >= task.start && i < task.start + task.duration) {
           cell.fill = {
             type: "pattern",
@@ -290,45 +320,52 @@ function App() {
             fgColor: { argb: task.color.replace("#", "") },
           };
         }
+        // Apply thin borders to all data cells in the timeline part
+        cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+      }
+       // Style Name and Hours cells for data rows
+      r.getCell(1).border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+      if (showHoursColumn) {
+        r.getCell(2).alignment = { vertical: "middle", horizontal: "center" };
+        r.getCell(2).border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
       }
     });
-    // 欄寬
-    sheet.columns.forEach((col, i) => {
-      col.width = i === 0 ? 30 : (i === 1 ? 8 : 8);
-    });
-    // 只加外框
-    sheet.eachRow((row, rowNumber) => {
-      row.eachCell((cell, colNumber) => {
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-      });
-    });
-    // 加粗最外框（修正版）
-    const firstRow = 1;
-    const lastRow = sheet.rowCount;
-    const firstCol = 1;
-    const lastCol = sheet.columnCount;
-    for (let r = firstRow; r <= lastRow; r++) {
-      for (let c = firstCol; c <= lastCol; c++) {
+
+    // Column Widths
+    sheet.getColumn(1).width = 30; // Action column
+    let currentColumnIndex = 2;
+    if (showHoursColumn) {
+      sheet.getColumn(currentColumnIndex).width = 8; // Hours column
+      currentColumnIndex++;
+    }
+    for (let i = 0; i < allDateHours.length; i++) {
+      sheet.getColumn(currentColumnIndex + i).width = 10; // Each hour cell in timeline (調寬)
+    }
+
+    // Overall thick outer border (applied after all rows and cells have their individual thin borders)
+    const firstRowIdx = 1;
+    const lastRowIdx = sheet.rowCount;
+    const firstColIdx = 1;
+    const lastColIdx = sheet.columnCount;
+
+    for (let r = firstRowIdx; r <= lastRowIdx; r++) {
+      for (let c = firstColIdx; c <= lastColIdx; c++) {
         const cell = sheet.getRow(r).getCell(c);
-        let border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-        if (r === firstRow) border.top = { style: 'thick' };
-        if (r === lastRow) border.bottom = { style: 'thick' };
-        if (c === firstCol) border.left = { style: 'thick' };
-        if (c === lastCol) border.right = { style: 'thick' };
-        cell.border = border;
+        // Ensure all cells have a base thin border object to modify
+        if (!cell.border) {
+            cell.border = {};
+        }
+        const currentBorder = JSON.parse(JSON.stringify(cell.border)); // Deep copy
+
+        currentBorder.top = r === firstRowIdx ? { style: "thick" } : (currentBorder.top || { style: "thin" });
+        currentBorder.bottom = r === lastRowIdx ? { style: "thick" } : (currentBorder.bottom || { style: "thin" });
+        currentBorder.left = c === firstColIdx ? { style: "thick" } : (currentBorder.left || { style: "thin" });
+        currentBorder.right = c === lastColIdx ? { style: "thick" } : (currentBorder.right || { style: "thin" });
+        cell.border = currentBorder;
       }
     }
-    // 下載
+    
+    // Download
     const buf = await workbook.xlsx.writeBuffer();
     saveAs(new Blob([buf]), "gantt.xlsx");
   }
@@ -469,7 +506,7 @@ function App() {
           />
         </label>
         <label>
-          Hours/Day:
+          Cells/Day:
           <input
             type="number"
             min={1}
@@ -490,6 +527,14 @@ function App() {
         <button onClick={() => fileInputRef.current.click()}>
           Import Excel
         </button>
+        <label style={{ marginLeft: "8px" }}>
+          <input
+            type="checkbox"
+            checked={showHoursColumn}
+            onChange={(e) => setShowHoursColumn(e.target.checked)}
+          />
+          Show Hours Column
+        </label>
       </div>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
         <span>Palette:</span>
@@ -576,20 +621,23 @@ function App() {
                   position: "sticky",
                   left: 0,
                   zIndex: 1,
+                  border: "1px solid #ccc",
                 }}
               >
                 Action
               </th>
-              <th
-                style={{
-                  width: 60,
-                  background: "#eee",
-                  textAlign: "center",
-                  border: "1px solid #ccc",
-                }}
-              >
-                Hours
-              </th>
+              {showHoursColumn && (
+                <th
+                  style={{
+                    width: 60,
+                    background: "#eee",
+                    textAlign: "center",
+                    border: "1px solid #ccc",
+                  }}
+                >
+                  Hours
+                </th>
+              )}
               {allDateHours.map((dh, i) =>
                 i % hoursPerDay === 0 ? (
                   <th
@@ -609,39 +657,55 @@ function App() {
                 ) : null
               )}
             </tr>
+            {/* Modified Second Header Row for Time Markers */}
             <tr>
               <th
                 style={{
+                  width: 200,
+                  background: "#f0f0f0",
                   position: "sticky",
                   left: 0,
                   zIndex: 1,
-                }}
-              />
-              <th
-                style={{
-                  background: "#f0f0f0",
                   border: "1px solid #ccc",
-                  textAlign: "center",
                 }}
               />
-              {allDateHours.map((dh, i) =>
-                i % hoursPerDay === 0 ? (
+              {showHoursColumn && (
+                <th
+                  style={{
+                    width: 60,
+                    background: "#f0f0f0",
+                    textAlign: "center",
+                    border: "1px solid #ccc",
+                  }}
+                />
+              )}
+              {allDateHours.map((dh, index) => {
+                const hourInDay = dh.hour;
+                let label = "";
+                if (hourInDay === 0) {
+                  label = "00:00";
+                } else if (hourInDay === 12) {
+                  label = "12:00";
+                }
+                return (
                   <th
-                    key={i}
-                    colSpan={hoursPerDay}
+                    key={`header-hour-marker-${index}`}
                     style={{
                       background: "#f0f0f0",
                       border: "1px solid #ccc",
-                      textAlign: "center",
-                      width: hoursPerDay * 40,
-                      minWidth: hoursPerDay * 40,
-                      maxWidth: hoursPerDay * 40,
+                      textAlign: label === "00:00" ? "left" : "center",
+                      paddingLeft: label === "00:00" ? "2px" : undefined,
+                      width: 40,
+                      minWidth: 40,
+                      maxWidth: 40,
+                      fontSize: "10px",
+                      fontWeight: "normal",
                     }}
                   >
-                    {hoursPerDay}
+                    {label}
                   </th>
-                ) : null
-              )}
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -672,15 +736,17 @@ function App() {
                 >
                   {task.name}
                 </td>
-                <td
-                  style={{
-                    border: "1px solid #ccc",
-                    width: 60,
-                    textAlign: "center",
-                  }}
-                >
-                  {task.duration}
-                </td>
+                {showHoursColumn && (
+                  <td
+                    style={{
+                      border: "1px solid #ccc",
+                      width: 60,
+                      textAlign: "center",
+                    }}
+                  >
+                    {task.duration}
+                  </td>
+                )}
                 {allDateHours.map((dh, i) => {
                   // bar
                   if (i === task.start) {
